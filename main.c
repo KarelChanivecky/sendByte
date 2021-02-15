@@ -6,10 +6,16 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #define DEFAULT_BUFF_SIZE 20
 #define MAX_IP4_ADDR_LEN 15
 #define MAX_DIGITS_PER_BYTE 3
+
+typedef struct {
+    int fd;
+    size_t buffer_size;
+} server_config;
 
 enum {
     EXIT_DISCONN,
@@ -19,7 +25,8 @@ enum {
     EXIT_SOCKET_ERROR,
     EXIT_CONNECT_ERROR,
     EXIT_BAD_PORT_ERROR,
-    EXIT_MEM_ALLOC_ERROR
+    EXIT_MEM_ALLOC_ERROR,
+    EXIT_PTHREAD_ERROR
 };
 
 /**
@@ -34,9 +41,9 @@ size_t get_bytes_in_line( uint8_t buffer[], const size_t buffer_size ) {
     size_t max_line_size = buffer_size * MAX_DIGITS_PER_BYTE // space for digits, assuming user is a good cst student...
                            + buffer_size; // space for whitespace in-between + null byte
     char * line_buffer = malloc( sizeof( char ) * max_line_size );
-    if (line_buffer == NULL) {
-        perror("Error allocating memory at get bytes in line");
-        exit(EXIT_MEM_ALLOC_ERROR);
+    if ( line_buffer == NULL) {
+        perror( "Error allocating memory at get bytes in line" );
+        exit( EXIT_MEM_ALLOC_ERROR );
     }
     line_buffer[ max_line_size ] = 0;
     getline( &line_buffer, &max_line_size, stdin );
@@ -58,7 +65,7 @@ size_t get_bytes_in_line( uint8_t buffer[], const size_t buffer_size ) {
         buffer[ bytes_scanned ] = byte_read;
     }
     bytes_scanned++;
-    free(line_buffer);
+    free( line_buffer );
     return bytes_scanned;
 }
 
@@ -137,8 +144,8 @@ int get_server_fd( char * ip4_addr, int port ) {
 
 
 void flush_stdin() {
-    while (getc(stdin) != '\n' ){
-        puts("fk");
+    while ( getc( stdin ) != '\n' ) {
+        puts( "fk" );
     };
 }
 
@@ -170,12 +177,28 @@ int get_port() {
     return buff;
 }
 
+void * server_listening_thread( void * v_server_cfg ) {
+    server_config * server_cfg = (server_config *) v_server_cfg;
+    int server_fd = server_cfg->fd;
+    size_t buffer_size = server_cfg->buffer_size;
+    free(server_cfg);
+
+    uint8_t buffer[buffer_size + 1];
+    buffer[buffer_size] = 0;
+    size_t buff_bytes_count;
+
+    while ( 1 ) {
+        buff_bytes_count = recv_bytes( server_fd, buffer, buffer_size );
+        print_bytes( buffer, buff_bytes_count );
+    }
+}
+
 int main( int argc, char * argv[] ) {
-    size_t buff_size;
+    size_t buffer_size;
     if ( argc == 2 ) {
-        buff_size = atoi( argv[ 1 ] );
+        buffer_size = atoi( argv[ 1 ] );
     } else {
-        buff_size = DEFAULT_BUFF_SIZE;
+        buffer_size = DEFAULT_BUFF_SIZE;
     }
     char server_ip4[MAX_IP4_ADDR_LEN + 1];
     server_ip4[ MAX_IP4_ADDR_LEN ] = 0;
@@ -186,12 +209,28 @@ int main( int argc, char * argv[] ) {
 
     int server_fd = get_server_fd( server_ip4, port );
 
-    uint8_t buffer[buff_size + 1];
+    server_config * server_cfg = malloc( sizeof( server_config ));
+    if ( server_cfg == NULL) {
+        perror( "Error allocating memory for server config" );
+        exit( EXIT_MEM_ALLOC_ERROR );
+    }
+    server_cfg->fd = server_fd;
+    server_cfg->buffer_size = buffer_size;
+
+    pthread_t server_thread;
+    int thread_status = pthread_create(&server_thread, NULL, server_listening_thread, server_cfg);
+    if (thread_status != 0) {
+        perror("Error at starting server listening thread");
+        exit(EXIT_PTHREAD_ERROR);
+    }
+
+    uint8_t buffer[buffer_size + 1];
+    buffer[buffer_size] = 0;
     size_t buff_bytes_count;
+
+
     while ( 1 ) {
-        buff_bytes_count = get_bytes_in_line( buffer, buff_size );
+        buff_bytes_count = get_bytes_in_line( buffer, buffer_size );
         send_bytes( server_fd, buffer, buff_bytes_count );
-        buff_bytes_count = recv_bytes( server_fd, buffer, buff_size );
-        print_bytes( buffer, buff_bytes_count );
     }
 }
