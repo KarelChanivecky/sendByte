@@ -8,7 +8,7 @@ Built within the context of Data communication's option at BCIT's CST program wi
 - Capability to build the project(know-how, C compiler)
 - OS that implements POSIX. Does not support windows although you may give it a go with WSL.
 
-## Installation instructions
+## Suggested installation instructions
 
 1.      git clone https://github.com/KarelChanivecky/sendbyte.git
 1.      cd sendbyte
