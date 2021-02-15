@@ -101,6 +101,11 @@ size_t recv_bytes( const int server_fd, uint8_t * buffer, const size_t buffer_si
     return bytes_read;
 }
 
+void clear_buffer(uint8_t * buffer, size_t buffer_size) {
+    for ( int i = 0; i < buffer_size; ++i ) {
+        buffer[i] = 0;
+    }
+}
 
 /**
  * Print the bytes in buffer in decimal base.
@@ -118,6 +123,7 @@ void print_bytes( const uint8_t buffer[], const size_t bytes_in_buff ) {
     }
     strcat( server_msg, "\n" );
     printf("%s", server_msg);
+    clear_buffer((uint8_t * )server_msg, max_digits);
 }
 
 /**
@@ -183,6 +189,8 @@ int get_port() {
     return buff;
 }
 
+
+
 void * server_listening_thread( void * v_server_cfg ) {
     server_config * server_cfg = (server_config *) v_server_cfg;
     int server_fd = server_cfg->fd;
@@ -196,6 +204,7 @@ void * server_listening_thread( void * v_server_cfg ) {
     while ( 1 ) {
         buff_bytes_count = recv_bytes( server_fd, buffer, buffer_size );
         print_bytes( buffer, buff_bytes_count );
+        clear_buffer(buffer, buffer_size);
     }
 }
 
