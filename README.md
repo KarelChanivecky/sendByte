@@ -1,12 +1,21 @@
 # sendByte
 Tool to send bytes to a server
 
-Built within the context of Datacommunication's option at BCIT's CST program with the intention of helping students debug their server.
+Built within the context of Data communication's option at BCIT's CST program with the intention of helping students debug their server.
 
 ## Requirements
 
-- Capability to build the project
+- Capability to build the project(know-how, C compiler)
 - OS that implements POSIX. Does not support windows although you may give it a go with WSL.
+
+## Installation instructions
+
+1.      git clone https://github.com/KarelChanivecky/sendbyte.git
+1.      cd sendbyte
+1.      mkdir build
+1.      cmake ..
+1.      cmake --build .
+1.      ln sendByte <path to bin folder>
 
 ## instructions
 
