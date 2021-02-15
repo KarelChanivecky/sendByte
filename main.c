@@ -88,7 +88,7 @@ size_t send_bytes( const int server_fd, const uint8_t buffer[], const size_t byt
 /**
  * Receive bytes into buffer.
  */
-size_t recv_bytes( const int server_fd, uint8_t buffer[], const size_t buffer_size ) {
+size_t recv_bytes( const int server_fd, uint8_t * buffer, const size_t buffer_size ) {
     int bytes_read = read( server_fd, buffer, buffer_size );
     if ( bytes_read == -1 ) {
         perror( "Error receiving bytes." );
@@ -106,10 +106,18 @@ size_t recv_bytes( const int server_fd, uint8_t buffer[], const size_t buffer_si
  * Print the bytes in buffer in decimal base.
  */
 void print_bytes( const uint8_t buffer[], const size_t bytes_in_buff ) {
+    char * server_msg_header = "From server: ";
+    size_t max_digits = bytes_in_buff * MAX_DIGITS_PER_BYTE + bytes_in_buff + strlen(server_msg_header);
+    char server_msg[max_digits];
+    strncpy( server_msg, server_msg_header, strlen(server_msg_header));
     for ( int i = 0; i < bytes_in_buff; ++i ) {
-        printf( "%d ", buffer[ i ] );
+        char byte[MAX_DIGITS_PER_BYTE + 1];
+        byte[MAX_DIGITS_PER_BYTE] = 0;
+        sprintf(byte, "%d ", buffer[ i ] );
+        strcat(server_msg, byte);
     }
-    puts( "" );
+    strcat( server_msg, "\n" );
+    printf("%s", server_msg);
 }
 
 /**
@@ -144,9 +152,7 @@ int get_server_fd( char * ip4_addr, int port ) {
 
 
 void flush_stdin() {
-    while ( getc( stdin ) != '\n' ) {
-        puts( "fk" );
-    };
+    while ( getc( stdin ) != '\n' ) {};
 }
 
 

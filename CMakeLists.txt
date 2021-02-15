@@ -3,4 +3,5 @@ project(sendbyte C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(sendbyte main.c)
+add_executable(sendByte main.c)
+target_link_libraries(sendByte pthread)
